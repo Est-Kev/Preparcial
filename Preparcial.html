@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformación de Polígonos Regulares</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: 20px auto;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        label {
+            margin-right: 10px;
+        }
+
+        input {
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Transformación de Polígonos Regulares</h1>
+    
+    <div>
+        <label for="nLados">Número de lados:</label>
+        <input type="number" id="nLados" min="3" value="4">
+    </div>
+    <div>
+        <label for="lLados">Dimensión de lados:</label>
+        <input type="number" id="lLados" value="50">
+    </div>
+    <div>
+        <label for="tx">Traslación Tx:</label>
+        <input type="number" id="tx" value="0">
+        <label for="ty">Ty:</label>
+        <input type="number" id="ty" value="0">
+    </div>
+    <div>
+        <label for="sx">Escalado Sx:</label>
+        <input type="number" id="sx" value="1" step="0.1">
+        <label for="sy">Sy:</label>
+        <input type="number" id="sy" value="1" step="0.1">
+    </div>
+    <button id="trazar">Trazar</button>
+    <button id="borrar">Borrar</button>
+
+    <canvas id="canvas" width="500" height="500"></canvas>
+
+    <script>
+        function calcularVertices(nLados, lLados, centerX, centerY) {
+            const vertices = [];
+            const alpha = (2 * Math.PI) / nLados; // Ángulo central
+            const beta = Math.PI / nLados; // Ángulo base-apotema
+
+            // Calcular la apotema
+            const apotema = lLados / (2 * Math.tan(beta));
+
+            // Calcular vértices del polígono
+            for (let i = 0; i < nLados; i++) {
+                const angle = alpha * i; // Ángulo actual
+                const x = centerX + (lLados / 2) * Math.cos(angle) - apotema * Math.sin(angle);
+                const y = centerY + (lLados / 2) * Math.sin(angle) + apotema * Math.cos(angle);
+                vertices.push({ x, y });
+            }
+
+            return vertices;
+        }
+
+        function drawPolygon(ctx, vertices) {
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            for (let i = 1; i < vertices.length; i++) {
+                ctx.lineTo(vertices[i].x, vertices[i].y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+        function clearCanvas(ctx) {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        }
+
+        function applyTransformations(ctx, tx, ty, sx, sy, centerX, centerY) {
+            // Mover el polígono al origen
+            ctx.translate(centerX, centerY);
+            // Escalar
+            ctx.scale(sx, sy);
+            // Mover el polígono de regreso a su posición original
+            ctx.translate(-centerX, -centerY);
+            // Aplicar traslación final
+            ctx.translate(tx, ty);
+        }
+
+        document.getElementById('trazar').addEventListener('click', () => {
+            const nLados = parseInt(document.getElementById('nLados').value);
+            const lLados = parseInt(document.getElementById('lLados').value);
+            const tx = parseFloat(document.getElementById('tx').value);
+            const ty = parseFloat(document.getElementById('ty').value);
+            const sx = parseFloat(document.getElementById('sx').value);
+            const sy = parseFloat(document.getElementById('sy').value);
+
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            clearCanvas(ctx);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Calcular los vértices del polígono
+            const vertices = calcularVertices(nLados, lLados, centerX, centerY);
+
+            ctx.save(); // Guardamos el estado inicial del contexto
+
+            // Aplicamos las transformaciones
+            applyTransformations(ctx, tx, ty, sx, sy, centerX, centerY);
+
+            // Dibujamos el polígono
+            drawPolygon(ctx, vertices);
+
+            ctx.restore(); // Restauramos el estado inicial del contexto
+        });
+
+        document.getElementById('borrar').addEventListener('click', () => {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            clearCanvas(ctx);
+        });
+    </script>
+</body>
+</html>
