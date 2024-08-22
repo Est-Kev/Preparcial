@@ -5,54 +5,107 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transformación de Polígonos Regulares</title>
     <style>
-        canvas {
-            border: 1px solid black;
-            display: block;
-            margin: 20px auto;
-        }
-
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        canvas {
+            border: 1px solid #333;
+            display: block;
+            margin: 20px auto;
+            background-color: #fff;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
 
         label {
             margin-right: 10px;
+            font-weight: bold;
         }
 
         input {
-            margin: 10px;
+            margin: 10px 5px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        hr {
+            margin: 20px 0;
+            border: 0;
+            border-top: 1px solid #ddd;
         }
     </style>
 </head>
 <body>
-    <h1>Transformación de Polígonos Regulares</h1>
-    
-    <div>
-        <label for="nLados">Número de lados:</label>
-        <input type="number" id="nLados" min="3" value="4">
+    <div class="container">
+        <h1>Transformación de Polígonos Regulares</h1>
+        
+        <div>
+            <label for="nLados">Número de lados:</label>
+            <input type="number" id="nLados" min="3" value="4">
+        </div>
+        <div>
+            <label for="lLados">Dimensión de lados:</label>
+            <input type="number" id="lLados" value="50">
+        </div>
+        <button id="trazar">Trazar</button>
+        <hr>
+        <div>
+            <label for="tx">Traslación Tx:</label>
+            <input type="number" id="tx" value="0">
+            <label for="ty">Ty:</label>
+            <input type="number" id="ty" value="0">
+        </div>
+        <div>
+            <label for="sx">Escalado Sx:</label>
+            <input type="number" id="sx" value="1" step="0.1">
+            <label for="sy">Sy:</label>
+            <input type="number" id="sy" value="1" step="0.1">
+        </div>
+        <div>
+            <label for="rotacion">Rotación (rads):</label>
+            <input type="number" id="rotacion" value="0" step="0.1">
+        </div>
+        <button id="aplicar">Aplicar</button>
+        <button id="borrar">Borrar</button>
     </div>
-    <div>
-        <label for="lLados">Dimensión de lados:</label>
-        <input type="number" id="lLados" value="50">
-    </div>
-    <button id="trazar">Trazar</button>
-    <hr>
-    <div>
-        <label for="tx">Traslación Tx:</label>
-        <input type="number" id="tx" value="0">
-        <label for="ty">Ty:</label>
-        <input type="number" id="ty" value="0">
-    </div>
-    <div>
-        <label for="sx">Escalado Sx:</label>
-        <input type="number" id="sx" value="1" step="0.1">
-        <label for="sy">Sy:</label>
-        <input type="number" id="sy" value="1" step="0.1">
-    </div>
-    <button id="aplicar">Aplicar</button>
-    <button id="borrar">Borrar</button>
 
     <canvas id="canvas" width="500" height="500"></canvas>
 
@@ -97,7 +150,7 @@
             ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         }
 
-        function applyTransformations(vertices, tx, ty, sx, sy, centerX, centerY) {
+        function applyTransformations(vertices, tx, ty, sx, sy, rotation, centerX, centerY) {
             return vertices.map(vertex => {
                 // Trasladar al origen
                 let x = vertex.x - centerX;
@@ -107,10 +160,14 @@
                 x *= sx;
                 y *= sy;
 
+                // Rotar
+                const xRot = x * Math.cos(rotation) - y * Math.sin(rotation);
+                const yRot = x * Math.sin(rotation) + y * Math.cos(rotation);
+                
                 // Regresar a la posición original y aplicar traslación
                 return {
-                    x: x + centerX + tx,
-                    y: y + centerY + ty
+                    x: xRot + centerX + tx,
+                    y: yRot + centerY + ty
                 };
             });
         }
@@ -131,9 +188,15 @@
             const ty = parseFloat(document.getElementById('ty').value);
             const sx = parseFloat(document.getElementById('sx').value);
             const sy = parseFloat(document.getElementById('sy').value);
+            const rotation = parseFloat(document.getElementById('rotacion').value);
+
+            clearCanvas(ctx);
+
+            // Calcular y dibujar la figura original
+            drawPolygon(ctx, originalVertices, 'black');
 
             // Calcular y dibujar la figura transformada en rojo
-            const transformedVertices = applyTransformations(originalVertices, tx, ty, sx, sy, centerX, centerY);
+            const transformedVertices = applyTransformations(originalVertices, tx, ty, sx, sy, rotation, centerX, centerY);
             drawPolygon(ctx, transformedVertices, 'red');
         });
 
