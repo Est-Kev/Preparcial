@@ -37,6 +37,8 @@
         <label for="lLados">Dimensión de lados:</label>
         <input type="number" id="lLados" value="50">
     </div>
+    <button id="trazar">Trazar</button>
+    <hr>
     <div>
         <label for="tx">Traslación Tx:</label>
         <input type="number" id="tx" value="0">
@@ -49,12 +51,18 @@
         <label for="sy">Sy:</label>
         <input type="number" id="sy" value="1" step="0.1">
     </div>
-    <button id="trazar">Trazar</button>
+    <button id="aplicar">Aplicar</button>
     <button id="borrar">Borrar</button>
 
     <canvas id="canvas" width="500" height="500"></canvas>
 
     <script>
+        let originalVertices = [];
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
         function calcularVertices(nLados, lLados, centerX, centerY) {
             const vertices = [];
             const alpha = (2 * Math.PI) / nLados; // Ángulo central
@@ -74,13 +82,14 @@
             return vertices;
         }
 
-        function drawPolygon(ctx, vertices) {
+        function drawPolygon(ctx, vertices, color = 'black') {
             ctx.beginPath();
             ctx.moveTo(vertices[0].x, vertices[0].y);
             for (let i = 1; i < vertices.length; i++) {
                 ctx.lineTo(vertices[i].x, vertices[i].y);
             }
             ctx.closePath();
+            ctx.strokeStyle = color;
             ctx.stroke();
         }
 
@@ -88,51 +97,49 @@
             ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         }
 
-        function applyTransformations(ctx, tx, ty, sx, sy, centerX, centerY) {
-            // Mover el polígono al origen
-            ctx.translate(centerX, centerY);
-            // Escalar
-            ctx.scale(sx, sy);
-            // Mover el polígono de regreso a su posición original
-            ctx.translate(-centerX, -centerY);
-            // Aplicar traslación final
-            ctx.translate(tx, ty);
+        function applyTransformations(vertices, tx, ty, sx, sy, centerX, centerY) {
+            return vertices.map(vertex => {
+                // Trasladar al origen
+                let x = vertex.x - centerX;
+                let y = vertex.y - centerY;
+
+                // Escalar
+                x *= sx;
+                y *= sy;
+
+                // Regresar a la posición original y aplicar traslación
+                return {
+                    x: x + centerX + tx,
+                    y: y + centerY + ty
+                };
+            });
         }
 
         document.getElementById('trazar').addEventListener('click', () => {
             const nLados = parseInt(document.getElementById('nLados').value);
             const lLados = parseInt(document.getElementById('lLados').value);
+
+            clearCanvas(ctx);
+
+            // Calcular y dibujar la figura original
+            originalVertices = calcularVertices(nLados, lLados, centerX, centerY);
+            drawPolygon(ctx, originalVertices, 'black');
+        });
+
+        document.getElementById('aplicar').addEventListener('click', () => {
             const tx = parseFloat(document.getElementById('tx').value);
             const ty = parseFloat(document.getElementById('ty').value);
             const sx = parseFloat(document.getElementById('sx').value);
             const sy = parseFloat(document.getElementById('sy').value);
 
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
-
-            clearCanvas(ctx);
-
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-
-            // Calcular los vértices del polígono
-            const vertices = calcularVertices(nLados, lLados, centerX, centerY);
-
-            ctx.save(); // Guardamos el estado inicial del contexto
-
-            // Aplicamos las transformaciones
-            applyTransformations(ctx, tx, ty, sx, sy, centerX, centerY);
-
-            // Dibujamos el polígono
-            drawPolygon(ctx, vertices);
-
-            ctx.restore(); // Restauramos el estado inicial del contexto
+            // Calcular y dibujar la figura transformada en rojo
+            const transformedVertices = applyTransformations(originalVertices, tx, ty, sx, sy, centerX, centerY);
+            drawPolygon(ctx, transformedVertices, 'red');
         });
 
         document.getElementById('borrar').addEventListener('click', () => {
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
             clearCanvas(ctx);
+            originalVertices = [];
         });
     </script>
 </body>
